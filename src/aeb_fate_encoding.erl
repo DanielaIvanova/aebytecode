@@ -193,30 +193,36 @@ serialize(?FATE_VARIANT(Arities, Tag, Values)) ->
 
 %% -----------------------------------------------------
 
--spec serialize_type(aeb_fate_data:fate_type_type()) -> [byte()].
-serialize_type(integer)     -> [?TYPE_INTEGER];
-serialize_type(boolean)     -> [?TYPE_BOOLEAN];
-serialize_type({list, T})   -> [?TYPE_LIST | serialize_type(T)];
+-spec serialize_type(aeb_fate_data:fate_type_type()) -> binary().
+serialize_type(integer)     -> <<?TYPE_INTEGER>>;
+serialize_type(boolean)     -> <<?TYPE_BOOLEAN>>;
+serialize_type({list, T})   ->
+    Bin = serialize_type(T),
+    <<?TYPE_LIST, Bin/binary>>;
 serialize_type({tuple, Ts}) ->
     case length(Ts) of
         N when N =< 255 ->
-            [?TYPE_TUPLE, N | [serialize_type(T) || T <- Ts]]
+            TupleTypes = << << (serialize_type(T))/binary >> || T <- Ts >>,
+            << ?TYPE_TUPLE, N, TupleTypes/binary >>
     end;
-serialize_type(address)     -> [?TYPE_OBJECT, ?OTYPE_ADDRESS];
-serialize_type(hash)        -> [?TYPE_OBJECT, ?OTYPE_HASH];
-serialize_type(signature)   -> [?TYPE_OBJECT, ?OTYPE_SIGNATURE];
-serialize_type(contract)    -> [?TYPE_OBJECT, ?OTYPE_CONTRACT];
-serialize_type(oracle)      -> [?TYPE_OBJECT, ?OTYPE_ORACLE];
-serialize_type(name)        -> [?TYPE_OBJECT, ?OTYPE_NAME];
-serialize_type(channel)     -> [?TYPE_OBJECT, ?OTYPE_CHANNEL];
-serialize_type(bits)        -> [?TYPE_BITS];
-serialize_type({map, K, V}) -> [?TYPE_MAP
-                                | serialize_type(K) ++ serialize_type(V)];
-serialize_type(string)      -> [?TYPE_STRING];
+serialize_type(address)     -> <<?TYPE_OBJECT, ?OTYPE_ADDRESS>>;
+serialize_type(hash)        -> <<?TYPE_OBJECT, ?OTYPE_HASH>>;
+serialize_type(signature)   -> <<?TYPE_OBJECT, ?OTYPE_SIGNATURE>>;
+serialize_type(contract)    -> <<?TYPE_OBJECT, ?OTYPE_CONTRACT>>;
+serialize_type(oracle)      -> <<?TYPE_OBJECT, ?OTYPE_ORACLE>>;
+serialize_type(name)        -> <<?TYPE_OBJECT, ?OTYPE_NAME>>;
+serialize_type(channel)     -> <<?TYPE_OBJECT, ?OTYPE_CHANNEL>>;
+serialize_type(bits)        -> <<?TYPE_BITS>>;
+serialize_type({map, K, V}) ->
+    KBin = serialize_type(K),
+    VBin = serialize_type(V),
+    <<?TYPE_MAP, KBin/binary, VBin/binary>>;
+serialize_type(string)      -> <<?TYPE_STRING>>;
 serialize_type({variant, ListOfVariants}) ->
     Size = length(ListOfVariants),
     if Size < 256 ->
-            [?TYPE_VARIANT, Size | [serialize_type(T) || T <- ListOfVariants]]
+            VariantTypes = << << (serialize_type(T))/binary >> || T <- ListOfVariants >>,
+            << ?TYPE_VARIANT, Size, VariantTypes/binary >>
     end.
 
 

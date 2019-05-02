@@ -15,14 +15,25 @@ prop_roundtrip() ->
     ?FORALL(FateType, fate_type(),
             collect(FateType,
             begin
-                Serialized = aeb_fate_encoding:serialize_type(FateType),
-                BinSerialized = list_to_binary(Serialized),
-                ?WHENFAIL(eqc:format("Serialized ~p to ~p (~p)~n", [FateType, Serialized, BinSerialized]),
+                BinSerialized = aeb_fate_encoding:serialize_type(FateType),
+                ?WHENFAIL(eqc:format("Serialized ~p to ~p~n", [FateType, BinSerialized]),
                           begin
                               {Type, <<>>} = aeb_fate_encoding:deserialize_type(BinSerialized),
                               equals(Type, FateType)
                           end)
             end)).
+
+%% functions not exported
+%% prop_signature_roundtrip() ->
+%%     ?FORALL({Args, FateType} = SigType, {list(fate_type()), fate_type()},
+%%             begin
+%%                 BinSerialized = aeb_fate_asm:serialize_signature(SigType),
+%%                 ?WHENFAIL(eqc:format("Serialized ~p -> ~p to ~p~n", [Args, FateType, BinSerialized]),
+%%                           begin
+%%                               {Type, <<>>} = aeb_fate_asm:deserialize_signature(BinSerialized),
+%%                               equals(Type, SigType)
+%%                           end)
+%%             end).
 
 
 fate_type() ->

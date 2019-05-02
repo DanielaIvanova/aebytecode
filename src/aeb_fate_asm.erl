@@ -516,7 +516,7 @@ serialize_annotations(#{ annotations := Annotations}) ->
 
 
 serialize(#{functions := Functions} =_Env) ->
-    %% Sort the functions oon name to get a canonical serialisation.
+    %% Sort the functions on name to get a canonical serialisation.
     Code = [[?FUNCTION, Name, serialize_signature(Sig), C]  ||
                {Name, {Sig, C}} <- lists:sort(maps:to_list(Functions))],
     serialize_code(lists:flatten(Code)).
@@ -713,12 +713,13 @@ bits_to_modifier(2#00) -> stack.
 serialize_data(_, Data) ->
     aeb_fate_encoding:serialize(Data).
 
+-spec serialize_signature({[aeb_fate_data:fate_type_type()], aeb_fate_data:fate_type_type()}) -> binary().
 serialize_signature({Args, RetType}) ->
-    [aeb_fate_encoding:serialize_type({tuple, Args}) |
-     aeb_fate_encoding:serialize_type(RetType)].
+    SerializedArgs = aeb_fate_encoding:serialize_type({tuple, Args}),
+    SerializedReturn = aeb_fate_encoding:serialize_type(RetType),
+    << SerializedArgs/binary, SerializedReturn/binary >>.
 
-
-
+-spec deserialize_signature(binary()) -> {{[aeb_fate_data:fate_type_type()], aeb_fate_data:fate_type_type()}, binary()}.
 deserialize_signature(Binary) ->
     {{tuple, Args}, Rest}  = aeb_fate_encoding:deserialize_type(Binary),
     {RetType, Rest2} = aeb_fate_encoding:deserialize_type(Rest),
